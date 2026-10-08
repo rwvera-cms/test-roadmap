@@ -131,7 +131,7 @@ const yes = (v) => v === true || ['yes', 'true', 'y', '1', 'done'].includes(norm
 const F = {
   theme: { code: ['code'], name: ['theme', 'name', 'title'], description: ['description'], kpi: ['kpi', 'kpiname'], unit: ['kpiunit', 'unit'],
     baseline: ['baseline', 'kpibaseline'], current: ['current', 'kpicurrent'], target: ['target', 'kpitarget'] },
-  area: { code: ['code'], name: ['productarea', 'name', 'title'], owner: ['productowner', 'owner'], dm: ['deliverymanager'], description: ['description'], active: ['active'] },
+  area: { code: ['code'], name: ['productarea', 'name', 'title'], owner: ['productowner', 'owner'], dm: ['deliverymanager'], description: ['description'], active: ['active'], category: ['category', 'type', 'worktype', 'portfolio'] },
   init: { id: ['id', 'initiativeid'], area: ['productarea', 'productareacode', 'area'], title: ['initiative', 'title', 'name'], theme: ['strategictheme', 'theme'], horizon: ['horizon'], status: ['status'],
     start: ['startdate', 'start'], end: ['enddate', 'end'], owner: ['owner'], summary: ['summary'], jira: ['jiraepic', 'epic'],
     deps: ['dependson', 'dependsonids', 'dependencies'], risk: ['risknote', 'risk'], reviewed: ['lastreviewed'] },
@@ -168,6 +168,7 @@ export function buildRoadmap(workbooks, base = null) {
     }));
     data.productAreas = table(w.sheets['Product Areas'], F.area).filter((a) => str(a.name) && !/^no$/i.test(str(a.active))).map((a) => ({
       id: str(a.code) || str(a.name), name: str(a.name), owner: str(a.owner), deliveryManager: str(a.dm), description: str(a.description),
+      category: str(a.category),
     }));
   }
 

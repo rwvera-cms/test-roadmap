@@ -90,6 +90,7 @@ def make_enterprise(path, settings, themes, areas):
              ('Settings: organization name, fiscal year start month (1 = January, 10 = October for US federal FY), Jira link.', f()),
              ('Themes: the enterprise strategic themes and the KPI each one moves. Review quarterly.', f()),
              ('Product Areas: one row per product area. The Code (e.g. CLD) is used in initiative IDs and in each product roadmap file.', f()),
+             ('Category: Engineering (new development) or Operational. The dashboard shows each in its own Product areas tab.', f()),
              ('', f()),
              ('Yellow cells are the ones to edit. After changing themes or product areas, regenerate the product templates', f()),
              ('(python3 templates/make_templates.py "Enterprise Setup.xlsx") so their dropdowns match.', f())]
@@ -120,14 +121,15 @@ def make_enterprise(path, settings, themes, areas):
     t.cell(row=1, column=7).comment = Comment('Update Current each quarter from your KPI source.', 'Roadmap')
 
     a = wb.create_sheet('Product Areas')
-    cols = [('Code', 9), ('Product area', 28), ('Product owner', 22), ('Delivery manager', 22), ('Description', 50), ('Active', 9)]
+    cols = [('Code', 9), ('Product area', 28), ('Product owner', 22), ('Delivery manager', 22), ('Description', 50), ('Active', 9), ('Category', 14)]
     header(a, cols); body(a, 2, 31, len(cols), wrap_cols=(5,))
     for r, ar in enumerate(areas, 2):
-        for c, v in enumerate([ar['id'], ar['name'], ar.get('owner', ''), ar.get('deliveryManager', ''), ar.get('description', ''), 'Yes'], 1):
+        for c, v in enumerate([ar['id'], ar['name'], ar.get('owner', ''), ar.get('deliveryManager', ''), ar.get('description', ''), 'Yes', ar.get('category') or 'Engineering'], 1):
             a.cell(row=r, column=c, value=v)
     for r in range(2, 32):
         for c in range(1, len(cols) + 1): a.cell(row=r, column=c).fill = INPUT_FILL
     dv_list(a, '"Yes,No"', 'F2:F31')
+    dv_list(a, '"Engineering,Operational"', 'G2:G31', 'Engineering = new development. Operational = run and operate.', 'Category')
     a.freeze_panes = 'A2'
     wb.save(path)
 
@@ -140,7 +142,7 @@ def read_enterprise(path):
     s = {str(r[0].value).strip(): r[1].value for r in wb['Settings'].iter_rows() if r[0].value}
     settings = {'orgName': s.get('Organization', ''), 'fiscalYearStartMonth': s.get('Fiscal year start month', 1), 'jiraBaseUrl': s.get('Jira base URL', '')}
     themes = [{'id': r['Code'], 'name': r['Theme'], 'description': r.get('Description') or ''} for r in rows('Themes') if r.get('Theme')]
-    areas = [{'id': r['Code'], 'name': r['Product area'], 'deliveryManager': r.get('Delivery manager') or ''}
+    areas = [{'id': r['Code'], 'name': r['Product area'], 'deliveryManager': r.get('Delivery manager') or '', 'category': r.get('Category') or ''}
              for r in rows('Product Areas') if r.get('Product area') and str(r.get('Active') or 'Yes').lower() != 'no']
     return settings, themes, areas
 

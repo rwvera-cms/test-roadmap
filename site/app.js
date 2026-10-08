@@ -16,6 +16,18 @@
   ];
   const RISK = ['At risk', 'Off track'];
   const VIEWS = ['timeline', 'horizons', 'outcomes', 'risk'];
+  // Product-area categories. Set per area in Enterprise Setup → Product Areas → Category.
+  // Until that column exists, these area codes default to Operational and the rest to Engineering.
+  const CATEGORIES = [
+    { id: 'Engineering', blurb: 'New development' },
+    { id: 'Operational', blurb: 'Run and operate' },
+  ];
+  const DEFAULT_OPERATIONAL = ['CMG', 'CAD', 'DVO', 'AGT'];
+  const categoryOf = (a) => CATEGORIES.find((c) => c.id.toLowerCase() === String(a.category || '').trim().toLowerCase())?.id
+    || (DEFAULT_OPERATIONAL.includes(a.id) ? 'Operational' : 'Engineering');
+  // Timeline grouping dimensions, outermost first. Picking several nests them in this order.
+  const DIMS = ['category', 'area', 'theme'];
+  const DIM_LABEL = { category: 'Category', area: 'Product area', theme: 'Strategic theme' };
   const STALE_DAYS = 30;
   const DAY = 86400000;
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -36,8 +48,9 @@
   const S = {
     data: null, byId: {}, theme: {}, area: {}, hue: {},
     view: VIEWS.includes(store.get('view')) ? store.get('view') : 'timeline',
-    group: store.get('group', 'theme'),
-    fTheme: '', fStatus: '',
+    groups: (store.get('groups', '') || store.get('group', 'theme')).split(',').filter((g) => DIMS.includes(g)),
+    areaTab: store.get('areaTab', 'Engineering'),
+    fThemes: [], fStatuses: [],
     hStatus: '', hDim: store.get('hdim', 'area'), hKey: '', // project health drill-down
     months: Number(store.get('months', 18)),
     hash: location.hash || '#/',
@@ -55,7 +68,7 @@
   function index(data) {
     S.data = data; S.byId = {}; S.theme = {}; S.area = {}; S.hue = {};
     data.themes.forEach((t, i) => { S.theme[t.id] = t; S.hue[t.id] = `var(--c${(i % 6) + 1})`; });
-    data.productAreas.forEach((a) => { S.area[a.id] = a; });
+    data.productAreas.forEach((a) => { a.category = categoryOf(a); S.area[a.id] = a; });
     data.initiatives.forEach((i) => { S.byId[i.id] = i; i.dependsOn = i.dependsOn || []; });
     data.initiatives.forEach((i) => { i.blocks = data.initiatives.filter((o) => o.dependsOn.includes(i.id)).map((o) => o.id); });
     data.initiatives.forEach((i) => { i.conflicts = conflictsFor(i); i.progress = progressFor(i); });
@@ -105,8 +118,8 @@
   function scoped(r) {
     return S.data.initiatives.filter((i) =>
       (!r.area || i.productArea === r.area) &&
-      (!S.fTheme || i.theme === S.fTheme) &&
-      (!S.fStatus || i.status === S.fStatus));
+      (!S.fThemes.length || S.fThemes.includes(i.theme)) &&
+      (!S.fStatuses.length || S.fStatuses.includes(i.status)));
   }
 
   /* ---------- fiscal calendar ---------- */
@@ -201,7 +214,7 @@
      Breakdown of the selected statuses (default: at risk + off track) by product area or theme,
      then the initiatives behind the selected bar. Follows the Theme filter. */
   function riskView(r) {
-    const all = S.data.initiatives.filter((i) => (!r.area || i.productArea === r.area) && (!S.fTheme || i.theme === S.fTheme));
+    const all = S.data.initiatives.filter((i) => (!r.area || i.productArea === r.area) && (!S.fThemes.length || S.fThemes.includes(i.theme)));
     const dim = r.area ? 'theme' : S.hDim;
     const pick = S.hStatus ? [S.hStatus] : RISK;
     const sel = all.filter((i) => pick.includes(i.status));
@@ -250,7 +263,14 @@
   }
 
   function renderAreas() {
-    $('#areas').innerHTML = S.data.productAreas.map((a) => {
+    if (!CATEGORIES.some((c) => c.id === S.areaTab)) S.areaTab = CATEGORIES[0].id;
+    $('#area-tabs').innerHTML = CATEGORIES.map((c) => {
+      const n = S.data.productAreas.filter((a) => a.category === c.id).length;
+      return `<button role="tab" data-area-tab="${c.id}" aria-selected="${S.areaTab === c.id}" title="${esc(c.blurb)}">${c.id} <span class="count">${n}</span></button>`;
+    }).join('');
+    const list = S.data.productAreas.filter((a) => a.category === S.areaTab);
+    $('#areas').innerHTML = list.length ? '' : `<div class="empty">No ${S.areaTab.toLowerCase()} product areas.</div>`;
+    $('#areas').insertAdjacentHTML('beforeend', list.map((a) => {
       const its = S.data.initiatives.filter((i) => i.productArea === a.id);
       const mix = STATUSES.map((s) => [s, its.filter((i) => i.status === s).length]).filter(([, n]) => n);
       const risky = its.filter((i) => i.status === 'At risk' || i.status === 'Off track').length;
@@ -261,7 +281,7 @@
         ${ru ? `<span class="meta"><b style="color:var(--fg)">${ru.pct}%</b> of Jira issues done across ${ru.epics} epic${ru.epics > 1 ? 's' : ''}</span>` : `<span class="meta">${its.filter((i) => i.jiraEpic).length} of ${its.length} linked to Jira${its.some((i) => i.jiraEpic) ? ' · progress not synced' : ''}</span>`}
         <span class="meta">${its.length} initiatives${risky ? ` · <b style="color:var(--bad)">${risky} at risk</b>` : ''} · DM ${esc(a.deliveryManager || '—')}</span>
       </button>`;
-    }).join('');
+    }).join(''));
   }
 
   /* ---------- timeline ---------- */
@@ -309,7 +329,7 @@
       return rows;
     };
 
-    let lanes;
+    let lanes, headLabel = 'Initiative';
     if (r.area) {
       lanes = [...inWin].sort((a, b) => d(a.start) - d(b.start)).map((i) => ({
         label: `<button data-open="${esc(i.id)}">${esc(i.title)}</button>
@@ -317,23 +337,45 @@
                 <span class="sub">${i.progress ? `${i.progress.done}/${i.progress.total} issues done · ${esc(i.jiraEpic)}` : i.jiraEpic ? `Jira ${esc(i.jiraEpic)}` : 'No Jira epic linked'}</span>`,
         rows: [[i]], allMs: true,
       }));
-    } else if (S.group === 'area') {
-      lanes = S.data.productAreas.map((a) => ({
-        label: `<button data-go="#/product/${esc(a.id)}">${esc(a.name)}</button><span class="sub">Open product roadmap ›</span>`,
-        rows: pack(inWin.filter((i) => i.productArea === a.id)),
-      }));
     } else {
-      lanes = S.data.themes.map((t) => ({
-        label: `<span class="tag" style="color:var(--fg);font-weight:600"><i style="--hue:${S.hue[t.id]}"></i>${esc(t.name)}</span><span class="sub">${esc(t.kpi?.name || '')}</span>`,
-        rows: pack(inWin.filter((i) => i.theme === t.id)),
-      }));
+      // One lane per combination of the selected dimensions. With 2+ dimensions, the outermost
+      // becomes a header row and the lane label shows the rest of the path.
+      const dims = DIMS.filter((k) => S.groups.includes(k));
+      if (!dims.length) dims.push('theme');
+      const groupsOf = {
+        category: () => CATEGORIES.map((c) => ({ id: c.id, name: c.id, sub: c.blurb })),
+        area: () => S.data.productAreas,
+        theme: () => S.data.themes,
+      };
+      const keyOf = { category: (i) => S.area[i.productArea]?.category, area: (i) => i.productArea, theme: (i) => i.theme };
+      const labelOf = (k, g, path) => {
+        const trail = path.length ? `<span class="sub">${path.map((p) => esc(p.name)).join(' › ')}</span>` : '';
+        if (k === 'area') return `${trail}<button data-go="#/product/${esc(g.id)}">${esc(g.name)}</button><span class="sub">Open product roadmap ›</span>`;
+        if (k === 'theme') return `${trail}<span class="tag" style="color:var(--fg);font-weight:600"><i style="--hue:${S.hue[g.id]}"></i>${esc(g.name)}</span><span class="sub">${esc(g.kpi?.name || '')}</span>`;
+        return `${trail}<span style="font-weight:600">${esc(g.name)}</span><span class="sub">${esc(g.sub || '')}</span>`;
+      };
+      const walk = (list, ds, path) => groupsOf[ds[0]]().flatMap((g) => {
+        const sub = list.filter((i) => keyOf[ds[0]](i) === g.id);
+        if (!sub.length) return [];
+        if (ds.length === 1) return [{ label: labelOf(ds[0], g, path), rows: pack(sub) }];
+        return walk(sub, ds.slice(1), [...path, g]);
+      });
+      if (dims.length === 1) lanes = walk(inWin, dims, []);
+      else {
+        lanes = groupsOf[dims[0]]().flatMap((g) => {
+          const sub = inWin.filter((i) => keyOf[dims[0]](i) === g.id);
+          const inner = sub.length ? walk(sub, dims.slice(1), []) : [];
+          return inner.length ? [{ header: `<span>${esc(g.name)}<span class="muted"> · ${sub.length} initiative${sub.length === 1 ? '' : 's'}</span></span>`, rows: [[]] }, ...inner] : [];
+        });
+      }
+      headLabel = dims.map((k) => DIM_LABEL[k]).join(' › ');
     }
     lanes = lanes.filter((l) => l.rows.length);
-    if (!lanes.length) return `<div class="empty">No initiatives match these filters in this window.</div>`;
+    if (!lanes.some((l) => !l.header)) return `<div class="empty">No initiatives match these filters in this window.</div>`;
 
     return `<div class="tl-scroll"><div class="tl" id="tl">
-      <div class="tl-row tl-head"><div class="tl-label"><span class="eyebrow">${r.area ? 'Initiative' : S.group === 'area' ? 'Product area' : 'Strategic theme'}</span></div><div class="tl-track">${lines}${ticks}${today}</div></div>
-      ${lanes.map((l) => `<div class="tl-row"><div class="tl-label">${l.label}</div><div class="tl-track">${lines}${today}
+      <div class="tl-row tl-head"><div class="tl-label"><span class="eyebrow">${esc(headLabel)}</span></div><div class="tl-track">${lines}${ticks}${today}</div></div>
+      ${lanes.map((l) => l.header ? `<div class="tl-row tl-group"><div class="tl-label">${l.header}</div><div class="tl-track">${lines}${today}</div></div>` : `<div class="tl-row"><div class="tl-label">${l.label}</div><div class="tl-track">${lines}${today}
         ${l.rows.map((row) => `<div class="bar-row">${row.map((i) => bar(i, l.allMs)).join('')}</div>`).join('')}</div></div>`).join('')}
     </div></div>
     ${hidden ? `<p class="small muted">${hidden} initiative${hidden > 1 ? 's are' : ' is'} outside this window. Widen the window to see ${hidden > 1 ? 'them' : 'it'}.</p>` : ''}`;
@@ -361,7 +403,7 @@
 
   /* ---------- outcomes ---------- */
   function outcomes(items, r) {
-    const themes = S.data.themes.filter((t) => !S.fTheme || t.id === S.fTheme);
+    const themes = S.data.themes.filter((t) => !S.fThemes.length || S.fThemes.includes(t.id));
     const kpis = themes.map((t) => {
       const k = t.kpi || {};
       const span = k.target - k.baseline;
@@ -496,9 +538,31 @@
     window.addEventListener('hashchange', () => { S.hash = location.hash || '#/'; render(); });
 
     document.querySelectorAll('.tabs [role=tab]').forEach((b) => b.addEventListener('click', () => { S.view = b.dataset.view; store.set('view', S.view); render(); }));
-    $('#f-group').addEventListener('change', (e) => { S.group = e.target.value; store.set('group', S.group); render(); });
-    $('#f-theme').addEventListener('change', (e) => { S.fTheme = e.target.value; render(); });
-    $('#f-status').addEventListener('change', (e) => { S.fStatus = e.target.value; render(); });
+    // multi-select dropdowns
+    const MS = { 'f-group': 'groups', 'f-theme': 'fThemes', 'f-status': 'fStatuses' };
+    const closeAll = (except) => document.querySelectorAll('.msel').forEach((m) => { if (m !== except) { m.querySelector('.msel-pop').hidden = true; m.querySelector('.msel-btn').setAttribute('aria-expanded', 'false'); } });
+    document.addEventListener('click', (e) => {
+      const m = e.target.closest('.msel');
+      closeAll(m);
+      if (!m) return;
+      if (e.target.closest('.msel-btn')) {
+        const pop = m.querySelector('.msel-pop'); pop.hidden = !pop.hidden;
+        m.querySelector('.msel-btn').setAttribute('aria-expanded', String(!pop.hidden));
+      } else if (e.target.closest('[data-msel-clear]')) {
+        m.querySelectorAll('input').forEach((x) => { x.checked = false; });
+        m.dispatchEvent(new Event('change'));
+      }
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(null); });
+    Object.entries(MS).forEach(([id, key]) => $('#' + id).addEventListener('change', () => {
+      S[key] = [...$('#' + id).querySelectorAll('input:checked')].map((x) => x.value);
+      if (key === 'groups') store.set('groups', S.groups.join(','));
+      mselLabel($('#' + id)); render();
+    }));
+    document.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-area-tab]');
+      if (t) { S.areaTab = t.dataset.areaTab; store.set('areaTab', S.areaTab); renderAreas(); }
+    });
     $('#f-window').addEventListener('change', (e) => { S.months = Number(e.target.value); store.set('months', S.months); render(); });
 
     // hover a bar: highlight what it depends on and what it blocks
@@ -525,13 +589,28 @@
 
   function hideTip() { $('#tip').hidden = true; }
 
+  // Multi-select dropdown: a button that opens a checkbox list. Nothing checked = the empty label (e.g. "All").
+  function msel(el, opts, sel, empty) {
+    el.dataset.empty = empty;
+    el.innerHTML = `<button type="button" class="msel-btn" aria-haspopup="true" aria-expanded="false"><span class="msel-txt"></span><span aria-hidden="true">▾</span></button>
+      <div class="msel-pop" hidden>${opts.map(([v, l]) => `<label><input type="checkbox" value="${esc(v)}"${sel.includes(v) ? ' checked' : ''}><span>${esc(l)}</span></label>`).join('')}
+      <button type="button" class="link-btn small" data-msel-clear>Clear</button></div>`;
+    mselLabel(el);
+  }
+  function mselLabel(el) {
+    const on = [...el.querySelectorAll('input:checked')];
+    const names = on.map((x) => x.nextElementSibling.textContent);
+    el.querySelector('.msel-txt').textContent = !on.length ? el.dataset.empty
+      : on.length === 1 || el.dataset.join ? names.join(el.dataset.join || '') : `${on.length} selected`;
+  }
+
   function fillFilters() {
-    $('#f-theme').innerHTML = '<option value="">All</option>';
-    $('#f-status').innerHTML = '<option value="">All</option>';
-    S.fTheme = ''; S.fStatus = '';
-    $('#f-theme').insertAdjacentHTML('beforeend', S.data.themes.map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join(''));
-    $('#f-status').insertAdjacentHTML('beforeend', STATUSES.map((s) => `<option>${s}</option>`).join(''));
-    $('#f-group').value = S.group; $('#f-window').value = String(S.months);
+    S.fThemes = []; S.fStatuses = [];
+    $('#f-group').dataset.join = ' › ';
+    msel($('#f-group'), DIMS.map((k) => [k, DIM_LABEL[k] === 'Strategic theme' ? 'Theme' : DIM_LABEL[k]]), S.groups, 'Theme');
+    msel($('#f-theme'), S.data.themes.map((t) => [t.id, t.name]), S.fThemes, 'All');
+    msel($('#f-status'), STATUSES.map((s) => [s, s]), S.fStatuses, 'All');
+    $('#f-window').value = String(S.months);
   }
 
   // Used by preview.js: show data from dropped workbooks without saving anything.

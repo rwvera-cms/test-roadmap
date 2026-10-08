@@ -114,6 +114,11 @@ button, select { font: inherit; color: inherit; }
 
 /* product areas */
 #areas-section { display: grid; gap: 8px; }
+.areas-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.area-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); }
+.area-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 4px 10px; cursor: pointer; color: var(--muted); font-weight: 550; font-size: 13px; }
+.area-tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.area-tabs button:hover { color: var(--fg); }
 .areas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
 .area { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; cursor: pointer; display: grid; gap: 6px; }
 .area:hover { border-color: var(--accent); }
@@ -135,12 +140,27 @@ button, select { font: inherit; color: inherit; }
 .filters { display: flex; flex-wrap: wrap; gap: 10px; padding-bottom: 8px; }
 .filters label { display: grid; font-size: 11px; color: var(--muted); gap: 2px; }
 .filters select { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-size: 13px; }
+.filters .fld { display: grid; font-size: 11px; color: var(--muted); gap: 2px; }
+.msel { position: relative; }
+.msel-btn { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 130px; max-width: 240px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-size: 13px; color: var(--fg); cursor: pointer; text-align: left; }
+.msel-btn .msel-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msel-btn[aria-expanded="true"] { border-color: var(--accent); }
+.msel-pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 15; min-width: 100%; width: max-content; max-width: 320px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / .18); padding: 6px; display: grid; gap: 2px; }
+.msel-pop label { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 5px; font-size: 13px; color: var(--fg); cursor: pointer; }
+.msel-pop label:hover { background: color-mix(in srgb, var(--fg) 6%, transparent); }
+.msel-pop input { accent-color: var(--accent); margin: 0; }
+.msel-pop [data-msel-clear] { justify-self: end; padding: 4px 8px; }
+.filters .fld:last-of-type .msel-pop, .filters > :last-child .msel-pop { left: auto; right: 0; }
 
 /* timeline */
 .tl-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
 .tl { min-width: 860px; position: relative; }
 .tl-row { display: grid; grid-template-columns: 210px 1fr; border-bottom: 1px solid var(--line); }
 .tl-row:last-child { border-bottom: 0; }
+.tl-group { background: color-mix(in srgb, var(--fg) 4%, var(--surface)); }
+.tl-group .tl-label { font-weight: 650; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding-block: 6px; }
+.tl-group .tl-label .muted { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.tl-group .tl-track { min-height: 0; padding: 0; }
 .tl-label { padding: 10px 12px; border-right: 1px solid var(--line); display: grid; align-content: start; gap: 2px; min-width: 0; }
 .tl-label button { all: unset; cursor: pointer; font-weight: 600; color: var(--fg); }
 .tl-label button:hover { color: var(--accent); text-decoration: underline; }

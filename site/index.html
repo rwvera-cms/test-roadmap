@@ -32,7 +32,10 @@
   <section class="health" id="health" aria-labelledby="health-h"></section>
 
   <section id="areas-section" aria-labelledby="areas-h">
-    <h2 id="areas-h" class="section-h">Product areas</h2>
+    <div class="areas-head">
+      <h2 id="areas-h" class="section-h">Product areas</h2>
+      <div class="area-tabs" id="area-tabs" role="tablist" aria-label="Product area category"></div>
+    </div>
     <div class="areas" id="areas"></div>
   </section>
 
@@ -44,11 +47,9 @@
       <button role="tab" id="tab-risk" data-view="risk" aria-selected="false">At risk <span class="count" id="risk-count"></span></button>
     </div>
     <div class="filters">
-      <label id="group-wrap">Group by
-        <select id="f-group"><option value="theme">Theme</option><option value="area">Product area</option></select>
-      </label>
-      <label>Theme <select id="f-theme"><option value="">All</option></select></label>
-      <label>Status <select id="f-status"><option value="">All</option></select></label>
+      <div class="fld" id="group-wrap"><span>Group by</span><div class="msel" id="f-group"></div></div>
+      <div class="fld"><span>Theme</span><div class="msel" id="f-theme"></div></div>
+      <div class="fld"><span>Status</span><div class="msel" id="f-status"></div></div>
       <label>Window
         <select id="f-window"><option value="12">12 months</option><option value="18" selected>18 months</option><option value="24">24 months</option></select>
       </label>
