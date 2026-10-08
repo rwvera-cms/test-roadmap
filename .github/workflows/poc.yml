@@ -1,12 +1,13 @@
-name: Deploy POC to GitHub Pages (sample data)
+name: Deploy to GitHub Pages
 
-# Publishes the dashboard with sample data to GitHub Pages.
-# Repo settings: Pages → Source = GitHub Actions, Visibility = Private (Enterprise Cloud).
+# Builds the dashboard from the workbooks in data/roadmaps/ and publishes it to GitHub Pages.
+# With no workbooks there, it publishes the sample data instead.
+# Repo settings: Pages → Source = GitHub Actions.
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['site/**', 'scripts/package-poc.mjs', '.github/workflows/poc.yml']
+    paths: ['site/**', 'scripts/**', 'data/**', '.github/workflows/poc.yml']
 
 permissions:
   contents: read
@@ -27,13 +28,18 @@ jobs:
         with:
           node-version: 24
 
-      - name: Package POC bundle
-        run: node scripts/package-poc.mjs poc-dist
+      - name: Build roadmap data
+        run: |
+          if ls data/roadmaps/*.xlsx >/dev/null 2>&1; then
+            node scripts/build-roadmap.mjs
+          else
+            echo "No workbooks in data/roadmaps/; publishing sample data."
+          fi
 
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: poc-dist
+          path: site
 
   deploy:
     needs: build

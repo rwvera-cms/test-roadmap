@@ -6,5 +6,3 @@ node_modules/
 # Demo bundle (sample data, no sign-in) for a personal Azure POC
 poc-dist/
 
-# Real roadmap workbooks stay out of git during the POC. Remove this line when the repo moves to the company setup.
-data/roadmaps/*.xlsx
