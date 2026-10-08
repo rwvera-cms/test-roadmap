@@ -18,11 +18,11 @@ jobs:
   sync-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       # Source, in priority order: roadmap workbooks in data/roadmaps/, CSV exports in data/lists/, MS Lists via Graph.
       - name: Build roadmap data

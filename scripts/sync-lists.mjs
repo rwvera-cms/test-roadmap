@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Pull the roadmap from MS Lists (SharePoint) via Microsoft Graph and write site/data/roadmap.json.
- * Node 20+, no dependencies.
+ * Node 24+, no dependencies.
  *
  * Required env (GitHub Actions secrets/vars):
  *   GRAPH_TOKEN (local testing only)     A delegated token copied from Graph Explorer. Skips the app registration.

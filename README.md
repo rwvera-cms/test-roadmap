@@ -43,7 +43,7 @@ flowchart LR
 | `scripts/csv-to-roadmap.mjs`, `scripts/sync-lists.mjs`, `lists/` | Alternative sources: MS Lists CSV exports, or MS Lists via Graph (needs an app registration) |
 | `.github/workflows/roadmap.yml` | Builds from `data/roadmaps/` (or the alternatives) and deploys to Azure Static Web Apps |
 
-Requires Node.js 20+ (`node -v`). No npm packages are needed.
+Requires Node.js 24+ (`node -v`). No npm packages are needed.
 
 ## Automating later
 
