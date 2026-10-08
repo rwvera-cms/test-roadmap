@@ -1,0 +1,10 @@
+{
+  "name": "enterprise-roadmap",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/build-roadmap.mjs && npx serve site",
+    "build": "node scripts/build-roadmap.mjs",
+    "serve": "npx serve site"
+  }
+}

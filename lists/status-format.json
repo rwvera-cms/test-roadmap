@@ -1,0 +1,15 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/column-formatting.schema.json",
+  "elmType": "div",
+  "style": {
+    "display": "inline-flex",
+    "align-items": "center",
+    "padding": "0 8px",
+    "border-radius": "10px",
+    "font-weight": "600",
+    "font-size": "12px",
+    "background-color": "=if(@currentField == 'On track', '#dcf2e3', if(@currentField == 'At risk', '#fbeccf', if(@currentField == 'Off track', '#f9dcda', if(@currentField == 'Done', '#dde6f4', '#eceff2'))))",
+    "color": "=if(@currentField == 'On track', '#14613a', if(@currentField == 'At risk', '#7a4d06', if(@currentField == 'Off track', '#8f231d', if(@currentField == 'Done', '#2f4d7c', '#4b5563'))))"
+  },
+  "txtContent": "@currentField"
+}

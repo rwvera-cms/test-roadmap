@@ -1,0 +1,46 @@
+name: Deploy POC to GitHub Pages (sample data)
+
+# Publishes the dashboard with sample data to GitHub Pages.
+# Repo settings: Pages → Source = GitHub Actions, Visibility = Private (Enterprise Cloud).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['site/**', 'scripts/package-poc.mjs', '.github/workflows/poc.yml']
+
+permissions:
+  contents: read
+  pages: write      # publish to GitHub Pages
+  id-token: write   # required by actions/deploy-pages
+
+concurrency:
+  group: pages
+  cancel-in-progress: false   # let an in-flight Pages deploy finish
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Package POC bundle
+        run: node scripts/package-poc.mjs poc-dist
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: poc-dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

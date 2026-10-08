@@ -1,0 +1,565 @@
+{
+  "source": "sample",
+  "generatedAt": "2026-10-07T12:00:00Z",
+  "settings": {
+    "orgName": "Samtek",
+    "fiscalYearStartMonth": 1,
+    "jiraBaseUrl": "https://your-company.atlassian.net"
+  },
+  "themes": [
+    {
+      "id": "ACC",
+      "name": "Accelerate delivery",
+      "description": "Shorten the path from idea to production.",
+      "kpi": {
+        "name": "Lead time for changes",
+        "unit": "days",
+        "baseline": 21,
+        "current": 14,
+        "target": 5
+      }
+    },
+    {
+      "id": "REL",
+      "name": "Improve reliability",
+      "description": "Fewer failed changes, faster recovery.",
+      "kpi": {
+        "name": "Change failure rate",
+        "unit": "%",
+        "baseline": 18,
+        "current": 15,
+        "target": 8
+      }
+    },
+    {
+      "id": "SEC",
+      "name": "Strengthen security & compliance",
+      "description": "Controls enforced in code, evidence on demand.",
+      "kpi": {
+        "name": "Controls automated",
+        "unit": "%",
+        "baseline": 30,
+        "current": 42,
+        "target": 80
+      }
+    },
+    {
+      "id": "CST",
+      "name": "Optimize cloud cost",
+      "description": "Spend tracks value and is visible per team.",
+      "kpi": {
+        "name": "Avg cost per environment",
+        "unit": "$K/mo",
+        "baseline": 42,
+        "current": 38,
+        "target": 28
+      }
+    }
+  ],
+  "productAreas": [
+    {
+      "id": "CLD",
+      "name": "Cloud Platform",
+      "owner": "Dana Whitfield",
+      "deliveryManager": "Marcus Lee",
+      "description": "Landing zones, Kubernetes, networking and DR."
+    },
+    {
+      "id": "DSO",
+      "name": "DevSecOps Pipelines",
+      "owner": "Priya Raman",
+      "deliveryManager": "Alicia Gomez",
+      "description": "CI/CD templates, quality and policy gates, environments."
+    },
+    {
+      "id": "IAM",
+      "name": "Identity & Access",
+      "owner": "Tom Okafor",
+      "deliveryManager": "Marcus Lee",
+      "description": "Workload identity, privileged access, access reviews."
+    },
+    {
+      "id": "DAT",
+      "name": "Data Platform",
+      "owner": "Helen Brooks",
+      "deliveryManager": "Jordan Patel",
+      "description": "Data platform migration and analytics services."
+    },
+    {
+      "id": "OBS",
+      "name": "Observability",
+      "owner": "Sam Ortiz",
+      "deliveryManager": "Alicia Gomez",
+      "description": "Logging, metrics, SLOs and incident automation."
+    }
+  ],
+  "initiatives": [
+    {
+      "id": "CLD-01",
+      "title": "Landing zone v2",
+      "productArea": "CLD",
+      "theme": "REL",
+      "horizon": "Commit",
+      "status": "On track",
+      "start": "2026-07-01",
+      "end": "2027-01-29",
+      "owner": "Dana Whitfield",
+      "summary": "Rebuild account vending and network baseline so every new workload lands on a hardened, consistent foundation.",
+      "jiraEpic": "PLAT-101",
+      "dependsOn": [],
+      "riskNote": "",
+      "lastReviewed": "2026-10-01",
+      "jira": {
+        "total": 40,
+        "done": 22,
+        "inProgress": 8,
+        "blocked": 0,
+        "forecastEnd": "2027-01-22"
+      }
+    },
+    {
+      "id": "CLD-02",
+      "title": "Kubernetes platform GA",
+      "productArea": "CLD",
+      "theme": "ACC",
+      "horizon": "Commit",
+      "status": "At risk",
+      "start": "2026-09-01",
+      "end": "2027-04-30",
+      "owner": "Dana Whitfield",
+      "summary": "Shared, multi-tenant Kubernetes with paved-road ingress, secrets and autoscaling. Pilot with two product teams before GA.",
+      "jiraEpic": "PLAT-140",
+      "dependsOn": [
+        "CLD-01",
+        "IAM-01"
+      ],
+      "riskNote": "Workload identity (IAM-01) is slipping; GA date depends on it.",
+      "lastReviewed": "2026-09-30",
+      "jira": {
+        "total": 48,
+        "done": 6,
+        "inProgress": 9,
+        "blocked": 3,
+        "forecastEnd": "2027-06-18"
+      }
+    },
+    {
+      "id": "CLD-03",
+      "title": "FinOps tagging & showback",
+      "productArea": "CLD",
+      "theme": "CST",
+      "horizon": "Plan",
+      "status": "Not started",
+      "start": "2027-02-01",
+      "end": "2027-07-30",
+      "owner": "Marcus Lee",
+      "summary": "Enforce cost-allocation tags and publish monthly showback per product team.",
+      "jiraEpic": "",
+      "dependsOn": [
+        "CLD-01"
+      ],
+      "riskNote": "",
+      "lastReviewed": "2026-09-15"
+    },
+    {
+      "id": "CLD-04",
+      "title": "Multi-region disaster recovery",
+      "productArea": "CLD",
+      "theme": "REL",
+      "horizon": "Explore",
+      "status": "Not started",
+      "start": "2027-09-01",
+      "end": "2028-03-31",
+      "owner": "Dana Whitfield",
+      "summary": "Warm-standby pattern for tier-1 services, tested quarterly.",
+      "jiraEpic": "",
+      "dependsOn": [
+        "CLD-02"
+      ],
+      "riskNote": "",
+      "lastReviewed": "2026-08-20"
+    },
+    {
+      "id": "DSO-01",
+      "title": "Golden pipeline templates",
+      "productArea": "DSO",
+      "theme": "ACC",
+      "horizon": "Commit",
+      "status": "On track",
+      "start": "2026-08-03",
+      "end": "2026-12-18",
+      "owner": "Priya Raman",
+      "summary": "Reusable build, test and deploy templates for the five most common stacks.",
+      "jiraEpic": "DEVX-12",
+      "dependsOn": [],
+      "riskNote": "",
+      "lastReviewed": "2026-10-02",
+      "jira": {
+        "total": 34,
+        "done": 21,
+        "inProgress": 6,
+        "blocked": 0,
+        "forecastEnd": "2026-12-11"
+      }
+    },
+    {
+      "id": "DSO-02",
+      "title": "Policy-as-code release gates",
+      "productArea": "DSO",
+      "theme": "SEC",
+      "horizon": "Commit",
+      "status": "On track",
+      "start": "2026-10-01",
+      "end": "2027-03-31",
+      "owner": "Priya Raman",
+      "summary": "Automated control checks in every pipeline, producing audit evidence on each release.",
+      "jiraEpic": "DEVX-30",
+      "dependsOn": [
+        "IAM-01"
+      ],
+      "riskNote": "",
+      "lastReviewed": "2026-10-02",
+      "jira": {
+        "total": 26,
+        "done": 2,
+        "inProgress": 4,
+        "blocked": 0,
+        "forecastEnd": "2027-03-31"
+      }
+    },
+    {
+      "id": "DSO-03",
+      "title": "Self-service environments",
+      "productArea": "DSO",
+      "theme": "ACC",
+      "horizon": "Plan",
+      "status": "Not started",
+      "start": "2027-03-01",
+      "end": "2027-10-29",
+      "owner": "Alicia Gomez",
+      "summary": "Teams create short-lived, policy-compliant environments from a catalog without a ticket.",
+      "jiraEpic": "",
+      "dependsOn": [
+        "CLD-02"
+      ],
+      "riskNote": "",
+      "lastReviewed": "2026-09-18"
+    },
+    {
+      "id": "IAM-01",
+      "title": "Workload identity federation",
+      "productArea": "IAM",
+      "theme": "SEC",
+      "horizon": "Commit",
+      "status": "Off track",
+      "start": "2026-07-15",
+      "end": "2026-12-15",
+      "owner": "Tom Okafor",
+      "summary": "Replace long-lived service credentials with federated workload identity across pipelines and clusters.",
+      "jiraEpic": "IAM-7",
+      "dependsOn": [],
+      "riskNote": "Vendor fix for token exchange not expected before November. Re-plan due 10/15.",
+      "lastReviewed": "2026-10-05",
+      "jira": {
+        "total": 31,
+        "done": 7,
+        "inProgress": 6,
+        "blocked": 4,
+        "forecastEnd": "2027-02-26"
+      }
+    },
+    {
+      "id": "IAM-02",
+      "title": "Privileged access automation",
+      "productArea": "IAM",
+      "theme": "SEC",
+      "horizon": "Plan",
+      "status": "Not started",
+      "start": "2027-01-15",
+      "end": "2027-06-30",
+      "owner": "Tom Okafor",
+      "summary": "Just-in-time elevation with approval workflow and automatic access reviews.",
+      "jiraEpic": "",
+      "dependsOn": [
+        "IAM-01"
+      ],
+      "riskNote": "",
+      "lastReviewed": "2026-09-10"
+    },
+    {
+      "id": "DAT-01",
+      "title": "Data platform migration, wave 1",
+      "productArea": "DAT",
+      "theme": "CST",
+      "horizon": "Commit",
+      "status": "On track",
+      "start": "2026-09-14",
+      "end": "2027-03-31",
+      "owner": "Helen Brooks",
+      "summary": "Move the 40 highest-cost on-prem data workloads to the managed platform.",
+      "jiraEpic": "DATA-55",
+      "dependsOn": [
+        "CLD-01"
+      ],
+      "riskNote": "",
+      "lastReviewed": "2026-10-01",
+      "jira": {
+        "total": 60,
+        "done": 9,
+        "inProgress": 11,
+        "blocked": 1,
+        "forecastEnd": "2027-04-09"
+      }
+    },
+    {
+      "id": "DAT-02",
+      "title": "Data platform migration, wave 2",
+      "productArea": "DAT",
+      "theme": "CST",
+      "horizon": "Plan",
+      "status": "Not started",
+      "start": "2027-04-01",
+      "end": "2027-11-30",
+      "owner": "Helen Brooks",
+      "summary": "Remaining workloads and decommissioning of the legacy cluster.",
+      "jiraEpic": "",
+      "dependsOn": [
+        "DAT-01"
+      ],
+      "riskNote": "",
+      "lastReviewed": "2026-09-20"
+    },
+    {
+      "id": "DAT-03",
+      "title": "Self-service analytics sandbox",
+      "productArea": "DAT",
+      "theme": "ACC",
+      "horizon": "Explore",
+      "status": "Not started",
+      "start": "2027-10-01",
+      "end": "2028-03-31",
+      "owner": "Jordan Patel",
+      "summary": "Governed sandbox for analysts with curated datasets.",
+      "jiraEpic": "",
+      "dependsOn": [
+        "DAT-02"
+      ],
+      "riskNote": "",
+      "lastReviewed": "2026-07-28"
+    },
+    {
+      "id": "OBS-01",
+      "title": "Unified logging & SLOs",
+      "productArea": "OBS",
+      "theme": "REL",
+      "horizon": "Commit",
+      "status": "On track",
+      "start": "2026-08-17",
+      "end": "2027-02-26",
+      "owner": "Sam Ortiz",
+      "summary": "One logging pipeline and published SLOs for every tier-1 service.",
+      "jiraEpic": "OBS-3",
+      "dependsOn": [],
+      "riskNote": "",
+      "lastReviewed": "2026-09-29",
+      "jira": {
+        "total": 38,
+        "done": 3,
+        "inProgress": 7,
+        "blocked": 0,
+        "forecastEnd": "2027-03-19"
+      }
+    },
+    {
+      "id": "OBS-02",
+      "title": "Automated incident response",
+      "productArea": "OBS",
+      "theme": "REL",
+      "horizon": "Plan",
+      "status": "Not started",
+      "start": "2027-03-01",
+      "end": "2027-09-30",
+      "owner": "Sam Ortiz",
+      "summary": "Runbook automation triggered by SLO burn alerts.",
+      "jiraEpic": "",
+      "dependsOn": [
+        "OBS-01"
+      ],
+      "riskNote": "",
+      "lastReviewed": "2026-09-29"
+    },
+    {
+      "id": "OBS-03",
+      "title": "AIOps anomaly detection",
+      "productArea": "OBS",
+      "theme": "REL",
+      "horizon": "Explore",
+      "status": "Not started",
+      "start": "2027-11-01",
+      "end": "2028-03-31",
+      "owner": "Alicia Gomez",
+      "summary": "Evaluate anomaly detection on the unified telemetry set.",
+      "jiraEpic": "",
+      "dependsOn": [
+        "OBS-01"
+      ],
+      "riskNote": "",
+      "lastReviewed": "2026-06-30"
+    }
+  ],
+  "milestones": [
+    {
+      "id": "m1",
+      "initiative": "CLD-01",
+      "title": "New account vending live",
+      "date": "2026-11-13",
+      "type": "Release",
+      "done": false
+    },
+    {
+      "id": "m2",
+      "initiative": "CLD-01",
+      "title": "Legacy accounts migrated",
+      "date": "2027-01-29",
+      "type": "Release",
+      "done": false
+    },
+    {
+      "id": "m3",
+      "initiative": "CLD-02",
+      "title": "Pilot with 2 teams",
+      "date": "2027-01-15",
+      "type": "Pilot",
+      "done": false
+    },
+    {
+      "id": "m4",
+      "initiative": "CLD-02",
+      "title": "GA go/no-go",
+      "date": "2027-04-16",
+      "type": "Review gate",
+      "done": false
+    },
+    {
+      "id": "m5",
+      "initiative": "CLD-03",
+      "title": "Showback v1 published",
+      "date": "2027-05-28",
+      "type": "Release",
+      "done": false
+    },
+    {
+      "id": "m6",
+      "initiative": "DSO-01",
+      "title": "Templates for Java & .NET",
+      "date": "2026-09-30",
+      "type": "Release",
+      "done": true
+    },
+    {
+      "id": "m7",
+      "initiative": "DSO-01",
+      "title": "All 5 stacks covered",
+      "date": "2026-12-18",
+      "type": "Release",
+      "done": false
+    },
+    {
+      "id": "m8",
+      "initiative": "DSO-02",
+      "title": "Gates in audit mode",
+      "date": "2026-12-11",
+      "type": "Pilot",
+      "done": false
+    },
+    {
+      "id": "m9",
+      "initiative": "DSO-02",
+      "title": "Control coverage review",
+      "date": "2027-03-31",
+      "type": "Review gate",
+      "done": false
+    },
+    {
+      "id": "m10",
+      "initiative": "IAM-01",
+      "title": "Pipelines federated",
+      "date": "2026-10-30",
+      "type": "Release",
+      "done": false
+    },
+    {
+      "id": "m11",
+      "initiative": "IAM-01",
+      "title": "Re-plan decision",
+      "date": "2026-10-15",
+      "type": "Decision",
+      "done": false
+    },
+    {
+      "id": "m12",
+      "initiative": "DAT-01",
+      "title": "First 10 workloads moved",
+      "date": "2026-12-04",
+      "type": "Release",
+      "done": false
+    },
+    {
+      "id": "m13",
+      "initiative": "DAT-01",
+      "title": "Cost impact review",
+      "date": "2027-03-31",
+      "type": "Review gate",
+      "done": false
+    },
+    {
+      "id": "m14",
+      "initiative": "DAT-02",
+      "title": "Legacy cluster off",
+      "date": "2027-11-30",
+      "type": "Release",
+      "done": false
+    },
+    {
+      "id": "m15",
+      "initiative": "OBS-01",
+      "title": "SLOs published for tier-1",
+      "date": "2026-12-11",
+      "type": "Release",
+      "done": false
+    },
+    {
+      "id": "m16",
+      "initiative": "OBS-01",
+      "title": "Reliability review",
+      "date": "2027-03-31",
+      "type": "Review gate",
+      "done": false
+    },
+    {
+      "id": "m17",
+      "initiative": "OBS-02",
+      "title": "Auto-remediation pilot",
+      "date": "2027-06-15",
+      "type": "Pilot",
+      "done": false
+    },
+    {
+      "id": "m18",
+      "initiative": "DSO-03",
+      "title": "Lead-time review",
+      "date": "2027-09-30",
+      "type": "Review gate",
+      "done": false
+    },
+    {
+      "id": "m19",
+      "initiative": "CLD-04",
+      "title": "DR test passed",
+      "date": "2028-03-15",
+      "type": "Review gate",
+      "done": false
+    }
+  ],
+  "jiraSyncedAt": "2026-10-07T11:00:00Z"
+}

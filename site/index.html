@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Enterprise Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="org">COMET</div>
+      <h1 id="page-title">Enterprise Roadmap</h1>
+      <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
+    </div>
+    <div class="head-right">
+      <button type="button" class="pv-btn" id="pv-open">Preview a roadmap file</button>
+      <input type="file" id="pv-file" accept=".xlsx" multiple hidden>
+      <div class="freshness" id="freshness"></div>
+    </div>
+  </header>
+
+  <div class="banner preview" id="preview-banner" role="status" hidden></div>
+  <div class="banner" id="sample-banner" hidden>Showing sample data. Add your roadmap workbooks, or use "Preview a roadmap file" to see one.</div>
+
+  <section id="product-head" hidden></section>
+
+  <section class="health" id="health" aria-labelledby="health-h"></section>
+
+  <section id="areas-section" aria-labelledby="areas-h">
+    <h2 id="areas-h" class="section-h">Product areas</h2>
+    <div class="areas" id="areas"></div>
+  </section>
+
+  <div class="toolbar">
+    <div class="tabs" role="tablist" aria-label="Roadmap view">
+      <button role="tab" id="tab-timeline" data-view="timeline" aria-selected="true">Timeline</button>
+      <button role="tab" id="tab-horizons" data-view="horizons" aria-selected="false">Planning horizons</button>
+      <button role="tab" id="tab-outcomes" data-view="outcomes" aria-selected="false">Outcomes</button>
+      <button role="tab" id="tab-risk" data-view="risk" aria-selected="false">At risk <span class="count" id="risk-count"></span></button>
+    </div>
+    <div class="filters">
+      <label id="group-wrap">Group by
+        <select id="f-group"><option value="theme">Theme</option><option value="area">Product area</option></select>
+      </label>
+      <label>Theme <select id="f-theme"><option value="">All</option></select></label>
+      <label>Status <select id="f-status"><option value="">All</option></select></label>
+      <label>Window
+        <select id="f-window"><option value="12">12 months</option><option value="18" selected>18 months</option><option value="24">24 months</option></select>
+      </label>
+    </div>
+  </div>
+
+  <main id="view" tabindex="-1"></main>
+
+  <section class="legend" id="legend" aria-label="Legend"></section>
+</div>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<div class="drawer-scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" aria-labelledby="d-title" hidden></aside>
+
+<div class="drop-overlay" id="drop-overlay" hidden><div>Drop your roadmap workbook to preview it<br><span>Read in your browser only. Nothing is uploaded.</span></div></div>
+
+<script src="app.js"></script>
+<script type="module" src="preview.js"></script>
+</body>
+</html>
