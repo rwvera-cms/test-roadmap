@@ -25,9 +25,13 @@
   const DEFAULT_OPERATIONAL = ['CMG', 'CAD', 'DVO', 'AGT'];
   const categoryOf = (a) => CATEGORIES.find((c) => c.id.toLowerCase() === String(a.category || '').trim().toLowerCase())?.id
     || (DEFAULT_OPERATIONAL.includes(a.id) ? 'Operational' : 'Engineering');
-  // Timeline grouping dimensions, outermost first. Picking several nests them in this order.
-  const DIMS = ['category', 'area', 'theme'];
-  const DIM_LABEL = { category: 'Category', area: 'Product area', theme: 'Strategic theme' };
+  // Timeline "Group by" options. The product-area options also limit the timeline to that category;
+  // picking Theme with a product-area option splits each product area into theme lanes.
+  const GROUP_OPTS = [
+    ['eng', 'Product area – Engineering', 'Engineering'],
+    ['ops', 'Product area – Operational', 'Operational'],
+    ['theme', 'Theme'],
+  ];
   const STALE_DAYS = 30;
   const DAY = 86400000;
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -48,7 +52,8 @@
   const S = {
     data: null, byId: {}, theme: {}, area: {}, hue: {},
     view: VIEWS.includes(store.get('view')) ? store.get('view') : 'timeline',
-    groups: (store.get('groups', '') || store.get('group', 'theme')).split(',').filter((g) => DIMS.includes(g)),
+    groups: (store.get('groups', '') || store.get('group', 'theme')).replace(/\b(area|category)\b/g, 'eng,ops')
+      .split(',').filter((g, n, all) => GROUP_OPTS.some(([k]) => k === g) && all.indexOf(g) === n),
     areaTab: store.get('areaTab', 'Engineering'),
     fThemes: [], fStatuses: [],
     hStatus: '', hDim: store.get('hdim', 'area'), hKey: '', // project health drill-down
@@ -338,37 +343,27 @@
         rows: [[i]], allMs: true,
       }));
     } else {
-      // One lane per combination of the selected dimensions. With 2+ dimensions, the outermost
-      // becomes a header row and the lane label shows the rest of the path.
-      const dims = DIMS.filter((k) => S.groups.includes(k));
-      if (!dims.length) dims.push('theme');
-      const groupsOf = {
-        category: () => CATEGORIES.map((c) => ({ id: c.id, name: c.id, sub: c.blurb })),
-        area: () => S.data.productAreas,
-        theme: () => S.data.themes,
-      };
-      const keyOf = { category: (i) => S.area[i.productArea]?.category, area: (i) => i.productArea, theme: (i) => i.theme };
-      const labelOf = (k, g, path) => {
-        const trail = path.length ? `<span class="sub">${path.map((p) => esc(p.name)).join(' › ')}</span>` : '';
-        if (k === 'area') return `${trail}<button data-go="#/product/${esc(g.id)}">${esc(g.name)}</button><span class="sub">Open product roadmap ›</span>`;
-        if (k === 'theme') return `${trail}<span class="tag" style="color:var(--fg);font-weight:600"><i style="--hue:${S.hue[g.id]}"></i>${esc(g.name)}</span><span class="sub">${esc(g.kpi?.name || '')}</span>`;
-        return `${trail}<span style="font-weight:600">${esc(g.name)}</span><span class="sub">${esc(g.sub || '')}</span>`;
-      };
-      const walk = (list, ds, path) => groupsOf[ds[0]]().flatMap((g) => {
-        const sub = list.filter((i) => keyOf[ds[0]](i) === g.id);
-        if (!sub.length) return [];
-        if (ds.length === 1) return [{ label: labelOf(ds[0], g, path), rows: pack(sub) }];
-        return walk(sub, ds.slice(1), [...path, g]);
-      });
-      if (dims.length === 1) lanes = walk(inWin, dims, []);
+      // Product-area options: a header row per selected category, then a lane per product area
+      // (or per product area › theme when Theme is also picked). Theme alone: a lane per theme.
+      const cats = GROUP_OPTS.filter(([k, , c]) => c && S.groups.includes(k)).map(([, , c]) => c);
+      const byTheme = S.groups.includes('theme') || !cats.length;
+      const themeLabel = (t, trail = '') => `${trail}<span class="tag" style="color:var(--fg);font-weight:600"><i style="--hue:${S.hue[t.id]}"></i>${esc(t.name)}</span><span class="sub">${esc(t.kpi?.name || '')}</span>`;
+      const themeLanes = (list, trail) => S.data.themes.map((t) => ({ label: themeLabel(t, trail), rows: pack(list.filter((i) => i.theme === t.id)) }));
+      if (!cats.length) lanes = themeLanes(inWin, '');
       else {
-        lanes = groupsOf[dims[0]]().flatMap((g) => {
-          const sub = inWin.filter((i) => keyOf[dims[0]](i) === g.id);
-          const inner = sub.length ? walk(sub, dims.slice(1), []) : [];
-          return inner.length ? [{ header: `<span>${esc(g.name)}<span class="muted"> · ${sub.length} initiative${sub.length === 1 ? '' : 's'}</span></span>`, rows: [[]] }, ...inner] : [];
+        lanes = cats.flatMap((c) => {
+          const inCat = inWin.filter((i) => S.area[i.productArea]?.category === c);
+          if (!inCat.length) return [{ header: `<span>${esc(c)}<span class="muted"> · no initiatives in this window</span></span>`, rows: [[]] }];
+          const areaLanes = S.data.productAreas.filter((a) => a.category === c).flatMap((a) => {
+            const its = inCat.filter((i) => i.productArea === a.id);
+            if (!its.length) return [];
+            if (!byTheme) return [{ label: `<button data-go="#/product/${esc(a.id)}">${esc(a.name)}</button><span class="sub">Open product roadmap ›</span>`, rows: pack(its) }];
+            return themeLanes(its, `<span class="sub"><button data-go="#/product/${esc(a.id)}" style="font-weight:500;color:var(--muted)">${esc(a.name)} ›</button></span>`);
+          });
+          return [{ header: `<span>${esc(c)}<span class="muted"> · ${inCat.length} initiative${inCat.length === 1 ? '' : 's'}</span></span>`, rows: [[]] }, ...areaLanes];
         });
       }
-      headLabel = dims.map((k) => DIM_LABEL[k]).join(' › ');
+      headLabel = cats.length ? (byTheme ? 'Product area › Theme' : 'Product area') : 'Strategic theme';
     }
     lanes = lanes.filter((l) => l.rows.length);
     if (!lanes.some((l) => !l.header)) return `<div class="empty">No initiatives match these filters in this window.</div>`;
@@ -606,8 +601,7 @@
 
   function fillFilters() {
     S.fThemes = []; S.fStatuses = [];
-    $('#f-group').dataset.join = ' › ';
-    msel($('#f-group'), DIMS.map((k) => [k, DIM_LABEL[k] === 'Strategic theme' ? 'Theme' : DIM_LABEL[k]]), S.groups, 'Theme');
+    msel($('#f-group'), GROUP_OPTS.map(([k, l]) => [k, l]), S.groups, 'Theme');
     msel($('#f-theme'), S.data.themes.map((t) => [t.id, t.name]), S.fThemes, 'All');
     msel($('#f-status'), STATUSES.map((s) => [s, s]), S.fStatuses, 'All');
     $('#f-window').value = String(S.months);
