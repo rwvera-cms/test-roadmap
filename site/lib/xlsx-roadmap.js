@@ -135,7 +135,8 @@ const F = {
   init: { id: ['id', 'initiativeid'], area: ['productarea', 'productareacode', 'area'], title: ['initiative', 'title', 'name'], theme: ['strategictheme', 'theme'], horizon: ['horizon'], status: ['status'],
     start: ['startdate', 'start'], end: ['enddate', 'end'], owner: ['owner'], summary: ['summary'], jira: ['jiraepic', 'epic'],
     deps: ['dependson', 'dependsonids', 'dependencies'], risk: ['risknote', 'risk'], reviewed: ['lastreviewed'] },
-  ms: { initiative: ['initiativeid', 'initiative'], title: ['milestone', 'title', 'name'], date: ['date', 'duedate'], type: ['type'], done: ['done'], jira: ['jiraepic', 'epic'] },
+  ms: { initiative: ['initiativeid', 'initiative', 'milestoneid'], title: ['milestone', 'feature', 'title', 'name'], date: ['date', 'duedate', 'targetdate'], type: ['type'], done: ['done'], jira: ['jiraepic', 'epic'],
+    start: ['startdate', 'start'], featureId: ['featureid'], team: ['team', 'dependentteam'] },
 };
 
 /**
@@ -222,7 +223,8 @@ export function buildRoadmap(workbooks, base = null) {
     const counter = {};
     const ms = table(w.sheets['Milestones'] || [], F.ms).filter((m) => str(m.title)).map((m) => {
       const ini = str(m.initiative).toUpperCase(); counter[ini] = (counter[ini] || 0) + 1;
-      return { id: `${ini}-m${counter[ini]}`, initiative: ini, title: str(m.title), date: day(m.date), type: str(m.type) || 'Release', done: yes(m.done), jiraEpic: str(m.jira) };
+      return { id: `${ini}-m${counter[ini]}`, initiative: ini, title: str(m.title), date: day(m.date), type: str(m.type) || 'Release', done: yes(m.done), jiraEpic: str(m.jira),
+        start: day(m.start), featureId: str(m.featureId), team: str(m.team) };
     });
     ms.filter((m) => !ids.has(m.initiative)).forEach((m) => warnings.push(`${w.fileName}: milestone "${m.title}" points to initiative "${m.initiative}", which isn't on the Initiatives tab.`));
 

@@ -40,6 +40,7 @@
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const d = (iso) => (iso ? Date.parse(iso.slice(0, 10) + 'T00:00:00Z') : NaN);
   const fmt = (iso) => { const t = d(iso); if (isNaN(t)) return '—'; const x = new Date(t); return `${MONTHS[x.getUTCMonth()]} ${x.getUTCDate()}, ${x.getUTCFullYear()}`; };
+  const fmtShort = (iso) => { const t = d(iso); if (isNaN(t)) return ''; const x = new Date(t); return `${MONTHS[x.getUTCMonth()]} ${x.getUTCDate()}`; };
   const fmtMonth = (iso) => { const t = d(iso); if (isNaN(t)) return '—'; const x = new Date(t); return `${MONTHS[x.getUTCMonth()]} ${x.getUTCFullYear()}`; };
   const now = new Date();
   const TODAY = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
@@ -102,7 +103,9 @@
   }
   const pctLabel = (p) => `<span class="pct${p.behind ? ' behind' : ''}">${p.pct}%</span>`;
 
-  function milestonesFor(id) { return S.data.milestones.filter((m) => m.initiative === id).sort((a, b) => d(a.date) - d(b.date)); }
+  // Features of a milestone by target date; undated ones last.
+  const dateKey = (m) => (isNaN(d(m.date)) ? Infinity : d(m.date));
+  function milestonesFor(id) { return S.data.milestones.filter((m) => m.initiative === id).sort((a, b) => dateKey(a) - dateKey(b) || String(a.featureId).localeCompare(String(b.featureId))); }
 
   /* ---------- routing ---------- */
   function route() {
@@ -203,15 +206,15 @@
     $('#health').innerHTML = `
       <h2 id="health-h" class="section-h">Project health</h2>
       <div class="hcard">
-        <div class="hhead"><div><h3>Portfolio status</h3><span class="small muted">Select a status to see its initiatives</span></div>
+        <div class="hhead"><div><h3>Portfolio status</h3><span class="small muted">Select a status to see its milestones</span></div>
           ${risky ? `<button class="link-btn small" data-h-status="">${risky} at risk or off track ›</button>` : ''}</div>
-        ${all.length ? `<div class="hero"><b>${ok}</b><span>of ${all.length} initiatives on track <span class="muted">(${pctOf(ok)}%)</span>${done ? ` <span class="muted">· ${done} done</span>` : ''}</span></div>
-        <div class="hmix" role="group" aria-label="Initiatives by status">${mix.map(([s, n]) => {
-          const tip = `${n} ${s} · ${pctOf(n)}% of initiatives`;
+        ${all.length ? `<div class="hero"><b>${ok}</b><span>of ${all.length} milestones on track <span class="muted">(${pctOf(ok)}%)</span>${done ? ` <span class="muted">· ${done} done</span>` : ''}</span></div>
+        <div class="hmix" role="group" aria-label="Milestones by status">${mix.map(([s, n]) => {
+          const tip = `${n} ${s} · ${pctOf(n)}% of milestones`;
           return `<button class="seg${cls(s)}" data-h-status="${esc(s)}" style="flex:${n};--sc:var(${STATUS_VAR[s]})" data-tip="${esc(tip)}" aria-label="${esc(tip)}" aria-pressed="${sel === s}"></button>`;
         }).join('')}</div>
         <div class="hlegend">${mix.map(([s, n]) => `<button class="${cls(s)}" data-h-status="${esc(s)}" aria-pressed="${sel === s}"><span class="dot" style="--sc:var(${STATUS_VAR[s]})"></span>${esc(s)} <b>${n}</b> <span class="muted">${pctOf(n)}%</span></button>`).join('')}</div>`
-        : '<span class="small muted">No initiatives yet.</span>'}
+        : '<span class="small muted">No milestones yet.</span>'}
       </div>`;
   }
 
@@ -234,7 +237,7 @@
     const max = Math.max(1, ...groups.map((g) => g.items.length));
     const rows = groups.map((g) => {
       const parts = pick.map((s) => [s, g.items.filter((i) => i.status === s).length]).filter(([, n]) => n);
-      const tip = `${g.name}: ${parts.map(([s, n]) => `${n} ${s.toLowerCase()}`).join(', ')} of ${g.total} initiatives`;
+      const tip = `${g.name}: ${parts.map(([s, n]) => `${n} ${s.toLowerCase()}`).join(', ')} of ${g.total} milestones`;
       return `<button class="hrow${S.hKey === g.id ? ' on' : ''}${S.hKey && S.hKey !== g.id ? ' off' : ''}" data-h-key="${esc(g.id)}" data-tip="${esc(tip)}" aria-label="${esc(tip)}" aria-pressed="${S.hKey === g.id}">
         <span class="hname">${esc(g.name)}</span>
         <span class="htrack"><span class="hfill" style="width:${(g.items.length / max) * 100}%">${parts.map(([s, n]) => `<i style="flex:${n};background:var(${STATUS_VAR[s]})"></i>`).join('')}</span></span>
@@ -247,11 +250,11 @@
 
     const g = groups.find((x) => x.id === S.hKey);
     const list = (g ? g.items : sel).slice().sort((a, b) => RISK.indexOf(b.status) - RISK.indexOf(a.status) || d(a.end) - d(b.end));
-    const empty = `<div class="empty">No initiatives are ${esc(what)}.</div>`;
+    const empty = `<div class="empty">No milestones are ${esc(what)}.</div>`;
 
     return `<div class="stack">
       <div class="hcard">
-        <div class="hhead"><div><h3>${esc(What)} by ${dim === 'area' ? 'product area' : 'theme'}</h3><span class="small muted">Select a bar to see its initiatives</span></div>
+        <div class="hhead"><div><h3>${esc(What)} by ${dim === 'area' ? 'product area' : 'theme'}</h3><span class="small muted">Select a bar to see its milestones</span></div>
           <div class="hhead-actions">${reset}${dimToggle}</div></div>
         ${rows ? `<div class="hbars">${rows}</div>` : empty}
       </div>
@@ -284,7 +287,7 @@
         <span class="name"><span>${esc(a.name)}</span><span class="mono">${esc(a.id)}</span></span>
         <span class="mix" title="${esc(mix.map(([s, n]) => `${n} ${s}`).join(', '))}">${mix.map(([s, n]) => `<i style="width:${(n / its.length) * 100}%;background:var(${STATUS_VAR[s]})"></i>`).join('')}</span>
         ${ru ? `<span class="meta"><b style="color:var(--fg)">${ru.pct}%</b> of Jira issues done across ${ru.epics} epic${ru.epics > 1 ? 's' : ''}</span>` : `<span class="meta">${its.filter((i) => i.jiraEpic).length} of ${its.length} linked to Jira${its.some((i) => i.jiraEpic) ? ' · progress not synced' : ''}</span>`}
-        <span class="meta">${its.length} initiatives${risky ? ` · <b style="color:var(--bad)">${risky} at risk</b>` : ''} · DM ${esc(a.deliveryManager || '—')}</span>
+        <span class="meta">${its.length} milestones${risky ? ` · <b style="color:var(--bad)">${risky} at risk</b>` : ''} · DM ${esc(a.deliveryManager || '—')}</span>
       </button>`;
     }).join(''));
   }
@@ -307,11 +310,9 @@
     }
     const today = TODAY >= ws && TODAY <= we ? `<span class="today" style="left:${pct(TODAY)}%"><span>Today</span></span>` : '';
 
-    const bar = (i, showAllMs) => {
+    const bar = (i) => {
       const s = d(i.start), e = d(i.end);
       const left = pct(s), width = Math.max(pct(e) - left, 0.8);
-      const ms = milestonesFor(i.id).filter((m) => (showAllMs || m.type === 'Review gate') && d(m.date) >= ws && d(m.date) <= we)
-        .map((m) => `<span class="ms${m.done ? ' done' : ''}${m.type === 'Review gate' ? ' gate' : ''}" style="left:${((pct(d(m.date)) - left) / width) * 100}%"></span>`).join('');
       const p = i.progress;
       const tip = `${i.id} · ${i.title}\n${i.status} · ${i.horizon}\n${fmt(i.start)} – ${fmt(i.end)}${p ? `\nJira: ${p.done} of ${p.total} issues done (${p.pct}%). Expected by today: ${p.expected}%` : ''}${i.conflicts.length ? '\n! ' + i.conflicts.map((c) => c.text).join('\n! ') : ''}`;
       // Progress fill is clipped to the visible part of the bar when the bar starts before the window.
@@ -321,8 +322,18 @@
         ${s < ws ? '<span class="clip" aria-label="starts earlier">◂</span>' : ''}
         <span class="dot" style="--sc:var(${STATUS_VAR[i.status] || '--idle'})" aria-label="${esc(i.status)}"></span>
         ${i.conflicts.length ? '<span class="warn" aria-label="dependency conflict">!</span>' : ''}
-        <span class="key">${esc(i.id)}</span><span>${esc(i.title)}</span>${p ? pctLabel(p) : ''}${ms}
+        <span class="key">${esc(i.id)}</span><span>${esc(i.title)}</span>${p ? pctLabel(p) : ''}
       </button>`;
+    };
+
+    const featBar = (f, i) => {
+      const e = d(f.date), s = isNaN(d(f.start)) ? e : Math.min(d(f.start), e);
+      if (isNaN(e)) return '<span class="ftbd">Date TBD</span>';
+      if (e < ws || s > we) return `<span class="ftbd">${fmt(f.date)} · outside this window</span>`;
+      const left = pct(s), width = Math.max(pct(e) - left, 0.6);
+      const tip = `${f.featureId ? f.featureId + ' · ' : ''}${f.title}\n${f.type}${f.done ? ' · Done' : ''}\n${!isNaN(d(f.start)) && f.start !== f.date ? `${fmt(f.start)} – ` : 'Target '}${fmt(f.date)}${f.team ? `\nTeam: ${f.team}` : ''}`;
+      return `<button class="fbar${f.done ? ' done' : ''}" data-open="${esc(i.id)}" style="left:${left}%;width:${width}%;--hue:${S.hue[i.theme] || 'var(--c6)'}" title="${esc(tip)}" aria-label="${esc(tip)}"></button>
+        <span class="fdate" style="left:calc(${pct(e)}% + 6px)">${fmtShort(f.date)}</span>`;
     };
 
     const pack = (list) => { // greedy row packing so bars in one lane never overlap
@@ -334,14 +345,21 @@
       return rows;
     };
 
-    let lanes, headLabel = 'Initiative';
+    let lanes, headLabel = 'Milestone';
     if (r.area) {
-      lanes = [...inWin].sort((a, b) => d(a.start) - d(b.start)).map((i) => ({
+      // Each milestone, then one row per feature under it.
+      headLabel = 'Milestone / Feature';
+      lanes = [...inWin].sort((a, b) => d(a.start) - d(b.start)).flatMap((i) => [{
         label: `<button data-open="${esc(i.id)}">${esc(i.title)}</button>
                 <span class="sub"><span class="tag"><i style="--hue:${S.hue[i.theme]}"></i>${esc(S.theme[i.theme]?.name || '')}</span></span>
                 <span class="sub">${i.progress ? `${i.progress.done}/${i.progress.total} issues done · ${esc(i.jiraEpic)}` : i.jiraEpic ? `Jira ${esc(i.jiraEpic)}` : 'No Jira epic linked'}</span>`,
-        rows: [[i]], allMs: true,
-      }));
+        rows: [[i]],
+      }, ...milestonesFor(i.id).map((f) => ({
+        feature: true,
+        label: `<button data-open="${esc(i.id)}" class="fname">${f.done ? '✓ ' : ''}${esc(f.title)}</button>
+                <span class="sub">${[f.featureId, f.type !== 'Release' ? `<b class="ftype">${esc(f.type)}</b>` : '', esc(f.team)].filter(Boolean).join(' · ')}</span>`,
+        track: featBar(f, i),
+      }))]);
     } else {
       // Product-area options: a header row per selected category, then a lane per product area
       // (or per product area › theme when Theme is also picked). Theme alone: a lane per theme.
@@ -353,27 +371,29 @@
       else {
         lanes = cats.flatMap((c) => {
           const inCat = inWin.filter((i) => S.area[i.productArea]?.category === c);
-          if (!inCat.length) return [{ header: `<span>${esc(c)}<span class="muted"> · no initiatives in this window</span></span>`, rows: [[]] }];
+          if (!inCat.length) return [{ header: `<span>${esc(c)}<span class="muted"> · no milestones in this window</span></span>`, rows: [[]] }];
           const areaLanes = S.data.productAreas.filter((a) => a.category === c).flatMap((a) => {
             const its = inCat.filter((i) => i.productArea === a.id);
             if (!its.length) return [];
             if (!byTheme) return [{ label: `<button data-go="#/product/${esc(a.id)}">${esc(a.name)}</button><span class="sub">Open product roadmap ›</span>`, rows: pack(its) }];
             return themeLanes(its, `<span class="sub"><button data-go="#/product/${esc(a.id)}" style="font-weight:500;color:var(--muted)">${esc(a.name)} ›</button></span>`);
           });
-          return [{ header: `<span>${esc(c)}<span class="muted"> · ${inCat.length} initiative${inCat.length === 1 ? '' : 's'}</span></span>`, rows: [[]] }, ...areaLanes];
+          return [{ header: `<span>${esc(c)}<span class="muted"> · ${inCat.length} milestone${inCat.length === 1 ? '' : 's'}</span></span>`, rows: [[]] }, ...areaLanes];
         });
       }
       headLabel = cats.length ? (byTheme ? 'Product area › Theme' : 'Product area') : 'Strategic theme';
     }
-    lanes = lanes.filter((l) => l.rows.length);
-    if (!lanes.some((l) => !l.header)) return `<div class="empty">No initiatives match these filters in this window.</div>`;
+    lanes = lanes.filter((l) => l.feature || l.rows.length);
+    if (!lanes.some((l) => !l.header)) return `<div class="empty">No milestones match these filters in this window.</div>`;
 
     return `<div class="tl-scroll"><div class="tl" id="tl">
       <div class="tl-row tl-head"><div class="tl-label"><span class="eyebrow">${esc(headLabel)}</span></div><div class="tl-track">${lines}${ticks}${today}</div></div>
-      ${lanes.map((l) => l.header ? `<div class="tl-row tl-group"><div class="tl-label">${l.header}</div><div class="tl-track">${lines}${today}</div></div>` : `<div class="tl-row"><div class="tl-label">${l.label}</div><div class="tl-track">${lines}${today}
-        ${l.rows.map((row) => `<div class="bar-row">${row.map((i) => bar(i, l.allMs)).join('')}</div>`).join('')}</div></div>`).join('')}
+      ${lanes.map((l) => l.header ? `<div class="tl-row tl-group"><div class="tl-label">${l.header}</div><div class="tl-track">${lines}${today}</div></div>`
+        : l.feature ? `<div class="tl-row tl-feat"><div class="tl-label">${l.label}</div><div class="tl-track">${lines}${today}<div class="bar-row">${l.track}</div></div></div>`
+        : `<div class="tl-row"><div class="tl-label">${l.label}</div><div class="tl-track">${lines}${today}
+        ${l.rows.map((row) => `<div class="bar-row">${row.map((i) => bar(i)).join('')}</div>`).join('')}</div></div>`).join('')}
     </div></div>
-    ${hidden ? `<p class="small muted">${hidden} initiative${hidden > 1 ? 's are' : ' is'} outside this window. Widen the window to see ${hidden > 1 ? 'them' : 'it'}.</p>` : ''}`;
+    ${hidden ? `<p class="small muted">${hidden} milestone${hidden > 1 ? 's are' : ' is'} outside this window. Widen the window to see ${hidden > 1 ? 'them' : 'it'}.</p>` : ''}`;
   }
 
   /* ---------- horizons ---------- */
@@ -409,7 +429,7 @@
         <div class="val">${esc(k.current ?? '—')} <small>${esc(k.unit || '')} now</small></div>
         <div class="track-bar" role="img" aria-label="${Math.round(p * 100)}% of the way from baseline to target"><i style="width:${p * 100}%"></i></div>
         <div class="ends"><span>Baseline ${esc(k.baseline ?? '—')}</span><span>${Math.round(p * 100)}% to target</span><span>Target ${esc(k.target ?? '—')}</span></div>
-        <span class="small muted">${n} contributing initiative${n === 1 ? '' : 's'}${r.area ? ' from this area' : ''}</span>
+        <span class="small muted">${n} contributing milestone${n === 1 ? '' : 's'}${r.area ? ' from this area' : ''}</span>
       </div>`;
     }).join('');
 
@@ -422,11 +442,11 @@
 
     const ids = new Set(items.map((i) => i.id));
     const gates = S.data.milestones.filter((m) => m.type === 'Review gate' && ids.has(m.initiative)).sort((a, b) => d(a.date) - d(b.date));
-    const gateTable = gates.length ? `<div class="matrix-wrap"><table><thead><tr><th>Date</th><th>Review gate</th><th>Initiative</th><th>Theme</th></tr></thead><tbody>
-      ${gates.map((m) => { const i = S.byId[m.initiative]; return `<tr><td class="mono">${fmt(m.date)}</td><td>${m.done ? '✓ ' : '◆ '}${esc(m.title)}</td>
+    const gateTable = gates.length ? `<div class="matrix-wrap"><table><thead><tr><th>Date</th><th>Review gate</th><th>Milestone</th><th>Theme</th></tr></thead><tbody>
+      ${gates.map((m) => { const i = S.byId[m.initiative]; return `<tr><td class="mono">${fmt(m.date)}</td><td>${m.done ? '✓ ' : ''}${esc(m.title)}</td>
         <td><button class="chip" data-open="${esc(i.id)}"><span class="key">${esc(i.id)}</span>${esc(i.title)}</button></td>
         <td><span class="tag"><i style="--hue:${S.hue[i.theme]}"></i>${esc(S.theme[i.theme]?.name || '')}</span></td></tr>`; }).join('')}
-      </tbody></table></div>` : '<div class="empty">No review gates in scope. Add milestones with type “Review gate” in MS Lists.</div>';
+      </tbody></table></div>` : '<div class="empty">No review gates in scope. Add features with type “Review gate”.</div>';
 
     return `<div class="stack">
       <h2 class="section-h">Outcome measures</h2><div class="kpis">${kpis}</div>
@@ -443,7 +463,6 @@
       <span>Bar color = strategic theme</span>
       <span><span class="sw fill"></span>Darker fill = % of Jira issues done. <b style="color:var(--bad)">Red %</b> = more than ${BEHIND} pts behind schedule</span>
       ${STATUSES.map((s) => `<span class="tag"><span class="dot" style="--sc:var(${STATUS_VAR[s]})"></span>${s}</span>`).join('')}
-      <span>◆ milestone · <span style="color:var(--accent)">◆</span> review gate</span>
       <span><b style="color:var(--bad)">!</b> dependency conflict</span>`;
   }
 
@@ -476,8 +495,8 @@
         <dt>Last reviewed</dt><dd>${fmt(i.lastReviewed)}${age > STALE_DAYS ? ` <span class="flag">${age} days ago</span>` : ''}</dd>
       </dl>
       ${jiraSection(i)}
-      <section><h3 class="section-h">Milestones</h3>
-        <ul>${milestonesFor(i.id).map((m) => `<li><span class="mono" style="min-width:92px">${fmt(m.date)}</span><span>${m.done ? '✓' : m.type === 'Review gate' ? '◆' : '◇'} ${esc(m.title)} <span class="muted small">${esc(m.type)}</span></span></li>`).join('') || '<li class="muted">No milestones yet.</li>'}</ul></section>
+      <section><h3 class="section-h">Features</h3>
+        <ul>${milestonesFor(i.id).map((m) => `<li><span class="mono" style="min-width:92px">${fmt(m.date)}</span><span>${m.done ? '✓ ' : ''}${esc(m.title)} <span class="muted small">${esc(m.type)}</span></span></li>`).join('') || '<li class="muted">No features yet.</li>'}</ul></section>
       <section><h3 class="section-h">Depends on</h3>
         <ul>${i.dependsOn.map((id) => `<li style="flex-wrap:wrap">${depLink(id)}</li>`).join('') || '<li class="muted">Nothing.</li>'}</ul>
         ${i.conflicts.map((c) => `<p class="flag">! ${esc(c.text)}</p>`).join('')}</section>
@@ -488,7 +507,7 @@
 
   function jiraSection(i) {
     const p = i.progress;
-    if (!p) return `<section><h3 class="section-h">Jira progress</h3><p class="muted small" style="margin:0">${i.jiraEpic ? 'Progress for this epic isn\'t synced from Jira yet. Use the link above to see it in Jira.' : 'Add the Jira epic key to this initiative to link it here.'}</p></section>`;
+    if (!p) return `<section><h3 class="section-h">Jira progress</h3><p class="muted small" style="margin:0">${i.jiraEpic ? 'Progress for this epic isn\'t synced from Jira yet. Use the link above to see it in Jira.' : 'Add the Jira epic key to this milestone to link it here.'}</p></section>`;
     const todo = p.total - p.done - p.inProgress;
     const w = (n) => (n / p.total) * 100;
     const synced = S.data.jiraSyncedAt ? new Date(S.data.jiraSyncedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
