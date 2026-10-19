@@ -57,6 +57,7 @@
       .split(',').filter((g, n, all) => GROUP_OPTS.some(([k]) => k === g) && all.indexOf(g) === n),
     areaTab: store.get('areaTab', 'Engineering'),
     fThemes: [], fStatuses: [],
+    expanded: new Set(),
     hStatus: '', hDim: store.get('hdim', 'area'), hKey: '', // project health drill-down
     months: Number(store.get('months', 18)),
     hash: location.hash || '#/',
@@ -153,10 +154,10 @@
     const items = scoped(r);
 
     $('#org').textContent = `${S.data.settings?.orgName || ''} · COMET`.replace(/^ · /, '');
-    $('#page-title').textContent = area ? `${area.name} roadmap` : 'Enterprise Roadmap';
-    document.title = area ? `${area.name} · Roadmap` : 'Enterprise Roadmap';
+    $('#page-title').textContent = area ? `${area.name} roadmap` : 'Program Roadmap';
+    document.title = area ? `${area.name} · Roadmap` : 'Program Roadmap';
     $('#crumbs').innerHTML = area
-      ? `<a href="#/" data-go="#/">Enterprise</a><span aria-hidden="true">›</span><span aria-current="page">${esc(area.name)}</span>`
+      ? `<a href="#/" data-go="#/">Program Roadmap</a><span aria-hidden="true">›</span><span aria-current="page">${esc(area.name)}</span>`
       : '<span aria-current="page">All product areas</span>';
 
     const gen = S.data.generatedAt ? new Date(S.data.generatedAt) : null;
@@ -345,21 +346,29 @@
       return rows;
     };
 
-    let lanes, headLabel = 'Milestone';
+    let lanes, headLabel = 'Milestone', headExtra = '';
     if (r.area) {
       // Each milestone, then one row per feature under it.
       headLabel = 'Milestone / Feature';
-      lanes = [...inWin].sort((a, b) => d(a.start) - d(b.start)).flatMap((i) => [{
+      const withF = inWin.filter((i) => milestonesFor(i.id).length);
+      const allOpen = withF.length && withF.every((i) => S.expanded.has(i.id));
+      headExtra = withF.length ? `<button class="link-btn small" data-toggle-all="${allOpen ? 'collapse' : 'expand'}">${allOpen ? 'Collapse all' : 'Expand all'}</button>` : '';
+      lanes = [...inWin].sort((a, b) => d(a.start) - d(b.start)).flatMap((i) => {
+        const fs = milestonesFor(i.id), open = S.expanded.has(i.id);
+        const toggle = fs.length ? `<button class="ftoggle" data-toggle="${esc(i.id)}" aria-expanded="${open}"><span aria-hidden="true">${open ? '▾' : '▸'}</span> ${fs.length} feature${fs.length === 1 ? '' : 's'}</button>` : '<span class="sub">No features yet</span>';
+        return [{
         label: `<button data-open="${esc(i.id)}">${esc(i.title)}</button>
                 <span class="sub"><span class="tag"><i style="--hue:${S.hue[i.theme]}"></i>${esc(S.theme[i.theme]?.name || '')}</span></span>
-                <span class="sub">${i.progress ? `${i.progress.done}/${i.progress.total} issues done · ${esc(i.jiraEpic)}` : i.jiraEpic ? `Jira ${esc(i.jiraEpic)}` : 'No Jira epic linked'}</span>`,
+                <span class="sub">${i.progress ? `${i.progress.done}/${i.progress.total} issues done · ${esc(i.jiraEpic)}` : i.jiraEpic ? `Jira ${esc(i.jiraEpic)}` : 'No Jira epic linked'}</span>
+                ${toggle}`,
         rows: [[i]],
-      }, ...milestonesFor(i.id).map((f) => ({
+      }, ...(open ? fs : []).map((f) => ({
         feature: true,
         label: `<button data-open="${esc(i.id)}" class="fname">${f.done ? '✓ ' : ''}${esc(f.title)}</button>
                 <span class="sub">${[f.featureId, f.type !== 'Release' ? `<b class="ftype">${esc(f.type)}</b>` : '', esc(f.team)].filter(Boolean).join(' · ')}</span>`,
         track: featBar(f, i),
-      }))]);
+      }))];
+      });
     } else {
       // Product-area options: a header row per selected category, then a lane per product area
       // (or per product area › theme when Theme is also picked). Theme alone: a lane per theme.
@@ -387,7 +396,7 @@
     if (!lanes.some((l) => !l.header)) return `<div class="empty">No milestones match these filters in this window.</div>`;
 
     return `<div class="tl-scroll"><div class="tl" id="tl">
-      <div class="tl-row tl-head"><div class="tl-label"><span class="eyebrow">${esc(headLabel)}</span></div><div class="tl-track">${lines}${ticks}${today}</div></div>
+      <div class="tl-row tl-head"><div class="tl-label"><span class="eyebrow">${esc(headLabel)}</span>${headExtra}</div><div class="tl-track">${lines}${ticks}${today}</div></div>
       ${lanes.map((l) => l.header ? `<div class="tl-row tl-group"><div class="tl-label">${l.header}</div><div class="tl-track">${lines}${today}</div></div>`
         : l.feature ? `<div class="tl-row tl-feat"><div class="tl-label">${l.label}</div><div class="tl-track">${lines}${today}<div class="bar-row">${l.track}</div></div></div>`
         : `<div class="tl-row"><div class="tl-label">${l.label}</div><div class="tl-track">${lines}${today}
@@ -528,6 +537,12 @@
   function wire() {
     document.addEventListener('click', (e) => {
       const r = route();
+      const tg = e.target.closest('[data-toggle],[data-toggle-all]');
+      if (tg) {
+        if (tg.dataset.toggle) S.expanded.has(tg.dataset.toggle) ? S.expanded.delete(tg.dataset.toggle) : S.expanded.add(tg.dataset.toggle);
+        else S.data.initiatives.filter((i) => i.productArea === r.area).forEach((i) => tg.dataset.toggleAll === 'expand' ? S.expanded.add(i.id) : S.expanded.delete(i.id));
+        render(); return;
+      }
       const h = e.target.closest('[data-h-status],[data-h-key],[data-h-dim],[data-h-reset]');
       if (h) {
         const ds = h.dataset;
