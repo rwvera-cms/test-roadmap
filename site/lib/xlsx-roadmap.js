@@ -134,7 +134,7 @@ const F = {
   area: { code: ['code'], name: ['productarea', 'name', 'title'], owner: ['productowner', 'owner'], dm: ['deliverymanager'], description: ['description'], active: ['active'], category: ['category', 'type', 'worktype', 'portfolio'] },
   init: { id: ['id', 'initiativeid'], area: ['productarea', 'productareacode', 'area'], title: ['initiative', 'title', 'name'], theme: ['strategictheme', 'theme'], horizon: ['horizon'], status: ['status'],
     start: ['startdate', 'start'], end: ['enddate', 'end'], owner: ['owner'], summary: ['summary'], jira: ['jiraepic', 'epic'],
-    deps: ['dependson', 'dependsonids', 'dependencies'], risk: ['risknote', 'risk'], reviewed: ['lastreviewed'] },
+    deps: ['dependson', 'dependsonids', 'dependencies'], risk: ['risknote', 'risk'], reviewed: ['lastreviewed'], order: ['order', 'sortorder', 'displayorder'] },
   ms: { initiative: ['initiativeid', 'initiative', 'milestoneid'], title: ['milestone', 'feature', 'title', 'name'], date: ['date', 'duedate', 'targetdate'], type: ['type'], done: ['done'], jira: ['jiraepic', 'epic'],
     start: ['startdate', 'start'], featureId: ['featureid'], team: ['team', 'dependentteam'] },
 };
@@ -202,6 +202,7 @@ export function buildRoadmap(workbooks, base = null) {
         owner: str(i.owner), summary: str(i.summary), jiraEpic: str(i.jira),
         dependsOn: str(i.deps).split(/[;,\s]+/).map((x) => x.toUpperCase()).filter(Boolean),
         riskNote: str(i.risk), lastReviewed: day(i.reviewed) || day(about.lastupdated),
+        ...(num(i.order) != null ? { order: num(i.order) } : {}),
       });
     }
     if (!inits.length) {

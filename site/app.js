@@ -353,7 +353,9 @@
       const withF = inWin.filter((i) => milestonesFor(i.id).length);
       const allOpen = withF.length && withF.every((i) => S.expanded.has(i.id));
       headExtra = withF.length ? `<button class="link-btn small" data-toggle-all="${allOpen ? 'collapse' : 'expand'}">${allOpen ? 'Collapse all' : 'Expand all'}</button>` : '';
-      lanes = [...inWin].sort((a, b) => d(a.start) - d(b.start)).flatMap((i) => {
+      // Order column from the workbook first (when set), then start date.
+      const ord = (i) => (i.order ?? Infinity);
+      lanes = [...inWin].sort((a, b) => ord(a) - ord(b) || d(a.start) - d(b.start)).flatMap((i) => {
         const fs = milestonesFor(i.id), open = S.expanded.has(i.id);
         const toggle = fs.length ? `<button class="ftoggle" data-toggle="${esc(i.id)}" aria-expanded="${open}"><span aria-hidden="true">${open ? '▾' : '▸'}</span> ${fs.length} feature${fs.length === 1 ? '' : 's'}</button>` : '<span class="sub">No features yet</span>';
         return [{
